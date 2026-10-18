@@ -299,24 +299,25 @@
 </head>
 <body class="min-h-screen antialiased">
   <div x-data="attendanceApp()" x-init="init()" x-cloak class="min-h-screen flex flex-col">
-    <header class="fixed inset-x-0 top-0 z-50 min-h-[105px] border-b border-[#105a44] bg-forest sm:min-h-[76px]">
-      <div class="mx-auto flex min-h-[105px] max-w-7xl flex-col items-stretch justify-center gap-2 px-4 py-3 sm:min-h-[76px] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:py-0 lg:px-8">
-        <div class="flex min-w-0 items-center gap-3">
-          <img src="https://blogger.googleusercontent.com/img/a/AVvXsEiHvgXgNoGTc_c8ZfAeQr2N2QoT4zMIoX3aGn3aeJK-AJC6G_fOl7JUia9w0510lJMhJmDVoPzvBTFqrJMaEPQMiQ1oGEwH0FJ_dOVDHh7AT0zB2lNjPgV7IzGsKZ5Mbn0Y3UmzzGBJWmz-wL5hxiFG99cRZ1c2n5VOHEMiBvc6Atv7DoUNiRmFmG6INbih=s400" alt="Logo SDN Kanangasari" width="44" height="44" class="h-11 w-11 shrink-0 object-contain">
+    <header class="fixed inset-x-0 top-0 z-50 min-h-[68px] border-b border-[#105a44] bg-forest sm:min-h-[76px]">
+      <div class="mx-auto flex min-h-[68px] max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:min-h-[76px] sm:gap-4 sm:px-6 sm:py-0 lg:px-8">
+        <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+          <img src="https://blogger.googleusercontent.com/img/a/AVvXsEiHvgXgNoGTc_c8ZfAeQr2N2QoT4zMIoX3aGn3aeJK-AJC6G_fOl7JUia9w0510lJMhJmDVoPzvBTFqrJMaEPQMiQ1oGEwH0FJ_dOVDHh7AT0zB2lNjPgV7IzGsKZ5Mbn0Y3UmzzGBJWmz-wL5hxiFG99cRZ1c2n5VOHEMiBvc6Atv7DoUNiRmFmG6INbih=s400" alt="Logo SDN Kanangasari" width="44" height="44" class="h-10 w-10 shrink-0 object-contain sm:h-11 sm:w-11">
           <div class="min-w-0">
-            <p class="truncate font-display text-[15px] font-extrabold text-white sm:text-base" x-text="schoolName"></p>
-            <p class="mt-0.5 break-words text-[10px] font-medium leading-tight text-white/75 sm:text-xs">Sistem Absensi Peserta Didik <span class="px-0.5">•</span> Tahun Ajaran <span class="font-semibold text-white" x-text="selectedYear ? selectedYear.replace('_', '/') : 'Memuat...' "></span></p>
+            <p class="truncate font-display text-[12px] font-extrabold text-white sm:text-base" x-text="schoolName"></p>
+            <p class="mt-0.5 text-[9px] font-medium leading-tight text-white/75 sm:text-xs"><span class="block sm:inline">Sistem Absensi Peserta Didik</span><span class="hidden px-0.5 sm:inline">•</span><span class="block sm:inline">Tahun Ajaran <span class="font-semibold text-white" x-text="selectedYear ? selectedYear.replace('_', '/') : 'Memuat...' "></span></span></p>
           </div>
         </div>
-        <div class="flex justify-center sm:items-center sm:justify-end">
-          <div class="inline-flex max-w-full items-center gap-1 rounded-md border border-white/25 bg-white/10 px-2 py-1 text-[10px] font-semibold leading-tight text-white sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-sm">
+        <div class="flex shrink-0 justify-end sm:items-center">
+          <div class="inline-flex max-w-[104px] items-center gap-1 rounded-md border border-white/25 bg-white/10 px-1.5 py-1 text-[9px] font-semibold leading-tight text-white sm:max-w-none sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-sm">
             <svg class="h-3 w-3 shrink-0 text-white sm:h-4 sm:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3v3m8-3v3M4.5 9h15M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            <span class="break-words text-center sm:text-right" x-text="selectedDate ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Memuat tanggal'"></span>
+            <span class="text-center sm:hidden" x-text="selectedDate ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Memuat tanggal'"></span>
+            <span class="hidden text-right sm:inline" x-text="selectedDate ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Memuat tanggal'"></span>
           </div>
         </div>
       </div>
     </header>
-    <div class="h-[105px] shrink-0 sm:h-[76px]" aria-hidden="true"></div>
+    <div class="h-[68px] shrink-0 sm:h-[76px]" aria-hidden="true"></div>
 
     <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-9 lg:px-8">
       <section class="rise-in mb-6 rounded-xl border border-[#e1e9e3] bg-white p-4 shadow-[0_2px_10px_rgba(29,55,40,0.025)] sm:p-5" aria-labelledby="filter-heading">
