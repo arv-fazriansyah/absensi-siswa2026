@@ -61,6 +61,7 @@
         students: [],
         selectedYear: '',
         selectedDate: '',
+        currentDate: '',
         selectedClass: '',
         selectedRole: '',
         search: '',
@@ -71,7 +72,8 @@
         loadToken: 0,
 
         async init() {
-          this.selectedDate = this.localToday();
+          this.currentDate = this.localToday();
+          this.selectedDate = this.currentDate;
           await Promise.all([this.loadSchoolInfo(), this.loadYears()]);
           this.updateDocumentTitle();
           if (!this.years.length) return;
@@ -327,8 +329,8 @@
         <div class="flex shrink-0 justify-end sm:items-center">
           <div class="inline-flex max-w-[104px] items-center gap-1 rounded-md border border-white/25 bg-white/10 px-1.5 py-1 text-[9px] font-semibold leading-tight text-white sm:max-w-none sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-sm">
             <svg class="h-3 w-3 shrink-0 text-white sm:h-4 sm:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3v3m8-3v3M4.5 9h15M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            <span class="text-center sm:hidden" x-text="selectedDate ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Memuat tanggal'"></span>
-            <span class="hidden text-right sm:inline" x-text="selectedDate ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Memuat tanggal'"></span>
+            <span class="text-center sm:hidden" x-text="currentDate ? new Date(`${currentDate}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : ''"></span>
+            <span class="hidden text-right sm:inline" x-text="currentDate ? new Date(`${currentDate}T00:00:00`).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''"></span>
           </div>
         </div>
       </div>
