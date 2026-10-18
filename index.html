@@ -59,6 +59,7 @@
         classes: [],
         roles: [],
         students: [],
+        previousStatuses: {},
         selectedYear: '',
         selectedDate: '',
         currentDate: '',
@@ -70,6 +71,7 @@
         message: '',
         messageType: 'info',
         loadToken: 0,
+        attendanceContextToken: 0,
 
         async init() {
           this.currentDate = this.localToday();
@@ -93,7 +95,7 @@
           const year = this.selectedYear ? this.selectedYear.replace('_', '/') : '';
           const titleName = this.schoolName || 'Absensi Peserta Didik';
           document.title = year
-            ? `${titleName} | Absensi ${year}`
+            ? `${titleName}`
             : titleName;
         },
 
@@ -180,6 +182,7 @@
 
         async loadStudents() {
           const token = ++this.loadToken;
+          this.previousStatuses = {};
           if (!this.selectedYear || !this.selectedClass) {
             this.students = [];
             return;
@@ -225,19 +228,37 @@
             .replace(/^_+|_+$/g, '') || 'role';
         },
 
-        attendancePath() {
+        attendancePath(date = this.selectedDate) {
           return [
             'sekolah', this.schoolId, 'absensi', this.selectedYear,
-            this.selectedDate, this.selectedClass, this.roleKey()
+            date, this.selectedClass, this.roleKey()
           ];
         },
 
+        previousDate() {
+          const date = new Date(`${this.selectedDate}T12:00:00`);
+          date.setDate(date.getDate() - 1);
+          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        },
+
         async loadSavedAttendance(token = this.loadToken) {
-          if (!this.students.length || !this.selectedRole || !this.selectedDate) return;
+          const contextToken = ++this.attendanceContextToken;
+          if (!this.students.length || !this.selectedRole || !this.selectedDate) {
+            this.previousStatuses = {};
+            return;
+          }
           try {
-            const saved = await this.request(this.attendancePath());
-            if (token !== this.loadToken) return;
+            const [saved, previous] = await Promise.all([
+              this.request(this.attendancePath()),
+              this.request(this.attendancePath(this.previousDate())).catch(() => null)
+            ]);
+            if (token !== this.loadToken || contextToken !== this.attendanceContextToken) return;
             const records = saved && saved.siswa ? saved.siswa : {};
+            const previousRecords = previous && previous.siswa ? previous.siswa : {};
+            const statusNames = { hadir: 'Hadir', izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
+            this.previousStatuses = Object.fromEntries(Object.entries(previousRecords)
+              .map(([nisn, record]) => [nisn, statusNames[String(record && record.status || '').toLowerCase()]])
+              .filter(([, status]) => status));
             this.students = this.students.map((student) => ({
               ...student,
               status: records[student.nisn] && records[student.nisn].status
@@ -251,6 +272,7 @@
 
         async changeAttendanceContext() {
           const token = this.loadToken;
+          this.previousStatuses = {};
           this.students = this.students.map((student) => ({ ...student, status: 'Hadir' }));
           await this.loadSavedAttendance(token);
         },
@@ -422,7 +444,10 @@
                     <span class="shrink-0 rounded bg-[#f1f5f2] px-1.5 py-0.5 text-left text-[11px] font-bold tabular-nums text-[#637269]" x-text="student.nomorAbsen"></span>
                     <span class="truncate font-mono text-[11px] tabular-nums text-[#849189]" x-text="student.nisn"></span>
                   </div>
-                  <p class="break-words text-sm font-semibold leading-snug text-ink" x-text="student.nama"></p>
+                  <div class="flex flex-col items-start gap-1.5">
+                    <p class="break-words text-sm font-semibold leading-snug text-ink" x-text="student.nama"></p>
+                    <span x-show="previousStatuses[student.nisn]" class="rounded border px-1.5 py-0.5 text-[10px] font-bold" :class="statusClass(previousStatuses[student.nisn])" x-text="`Kemarin: ${previousStatuses[student.nisn]}`"></span>
+                  </div>
                 </div>
                 <label class="block w-[118px] shrink-0">
                   <span class="sr-only" x-text="`Kehadiran ${student.nama}`"></span>
@@ -473,7 +498,12 @@
                 <tr class="transition-colors hover:bg-[#fbfcfb]">
                   <td class="px-5 py-3.5 text-left text-sm font-semibold tabular-nums text-[#75837b]" x-text="student.nomorAbsen"></td>
                   <td class="px-4 py-3.5 font-mono text-xs tabular-nums text-[#75837b]" x-text="student.nisn"></td>
-                  <td class="px-4 py-3.5 text-sm font-semibold text-ink" x-text="student.nama"></td>
+                  <td class="px-4 py-3.5 text-sm font-semibold text-ink">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span x-text="student.nama"></span>
+                      <span x-show="previousStatuses[student.nisn]" class="rounded border px-1.5 py-0.5 text-[10px] font-bold" :class="statusClass(previousStatuses[student.nisn])" x-text="`Kemarin: ${previousStatuses[student.nisn]}`"></span>
+                    </div>
+                  </td>
                   <td class="px-5 py-2.5">
                     <label class="block">
                       <span class="sr-only" x-text="`Kehadiran ${student.nama}`"></span>
@@ -500,10 +530,10 @@
         </div>
 
         <div class="flex flex-col gap-3 border-t border-[#e8eeea] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p class="text-xs text-[#7b8981]" x-show="students.length">
+          <p class="text-center text-xs text-[#7b8981] sm:text-left" x-show="students.length">
             <span class="font-semibold text-ink" x-text="markedCount"></span> dari <span x-text="students.length"></span> siswa sudah ditandai
           </p>
-          <p class="text-xs text-[#7b8981]" x-show="!students.length">Pilih kelas untuk mulai mengisi absensi.</p>
+          <p class="text-center text-xs text-[#7b8981] sm:text-left" x-show="!students.length">Pilih kelas untuk mulai mengisi absensi.</p>
           <button type="button" @click="saveAttendance()" :disabled="saving || loading || !students.length || markedCount !== students.length || !selectedRole" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-forest px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#105a44] focus:outline-none focus:ring-2 focus:ring-forest focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#a9bdb2] disabled:shadow-none sm:min-w-[160px]">
             <svg x-show="!saving" class="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M5 4h12l3 3v13H4V5a1 1 0 0 1 1-1Zm3 0v6h8V4M8 20v-6h8v6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <svg x-show="saving" class="h-[17px] w-[17px] animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z"/></svg>
