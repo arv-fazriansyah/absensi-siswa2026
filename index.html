@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7f5">
+  <meta name="description" content="Aplikasi absensi peserta didik SDN Kanangasari.">
+  <title>Absensi Peserta Didik | SDN Kanangasari</title>
+  <link rel="icon" type="image/png" href="https://blogger.googleusercontent.com/img/a/AVvXsEiHvgXgNoGTc_c8ZfAeQr2N2QoT4zMIoX3aGn3aeJK-AJC6G_fOl7JUia9w0510lJMhJmDVoPzvBTFqrJMaEPQMiQ1oGEwH0FJ_dOVDHh7AT0zB2lNjPgV7IzGsKZ5Mbn0Y3UmzzGBJWmz-wL5hxiFG99cRZ1c2n5VOHEMiBvc6Atv7DoUNiRmFmG6INbih=s400">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['DM Sans', 'sans-serif'],
+            display: ['Manrope', 'sans-serif']
+          },
+          colors: {
+            ink: '#20312b',
+            forest: '#176b52',
+            mint: '#e5f2ec',
+            canvas: '#f4f7f5'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root { color-scheme: light; }
+    body { background: #f4f7f5; color: #20312b; font-family: 'DM Sans', sans-serif; }
+    [x-cloak] { display: none !important; }
+    .control { min-height: 46px; }
+    .status-select { transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
+    .status-empty { background: #f3f5f4; color: #66756e; }
+    .status-hadir { background: #e3f4e9; color: #176b3b; border-color: #b9dfc5; }
+    .status-izin { background: #e7f1fb; color: #245e91; border-color: #c8dcef; }
+    .status-sakit { background: #fff2d9; color: #8a570a; border-color: #f2dcaa; }
+    .status-alpa { background: #fde8e7; color: #a13f3b; border-color: #f1c7c4; }
+    .rise-in { animation: rise-in 420ms cubic-bezier(.2,.7,.2,1) both; }
+    @keyframes rise-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+  <script>
+    const FIREBASE_BASE = 'https://absensi-siswa2026-default-rtdb.asia-southeast1.firebasedatabase.app';
+    const SCHOOL_ID = '20205428';
+
+    function attendanceApp() {
+      return {
+        schoolName: 'SDN Kanangasari',
+        schoolId: SCHOOL_ID,
+        years: [],
+        classes: [],
+        roles: [],
+        students: [],
+        selectedYear: '',
+        selectedDate: '',
+        selectedClass: '',
+        selectedRole: '',
+        search: '',
+        loading: false,
+        saving: false,
+        message: '',
+        messageType: 'info',
+        loadToken: 0,
+
+        async init() {
+          this.selectedDate = this.localToday();
+          await Promise.all([this.loadSchoolInfo(), this.loadYears()]);
+          if (!this.years.length) return;
+
+          const yearNow = new Date().getFullYear();
+          const currentAcademicYear = `${yearNow}_${yearNow + 1}`;
+          this.selectedYear = this.years.includes(currentAcademicYear)
+            ? currentAcademicYear
+            : this.years[0];
+
+          await this.loadClasses();
+          this.selectedRole = this.roles[0] || '';
+        },
+
+        localToday() {
+          const now = new Date();
+          return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        },
+
+        firebaseUrl(parts) {
+          return `${FIREBASE_BASE}/${parts.map((part) => encodeURIComponent(part)).join('/')}.json`;
+        },
+
+        async request(path, options = {}) {
+          const response = await fetch(this.firebaseUrl(path), {
+            ...options,
+            headers: { 'Content-Type': 'application/json', ...options.headers }
+          });
+          const body = await response.json().catch(() => null);
+          if (!response.ok) {
+            const detail = body && body.error ? body.error : `HTTP ${response.status}`;
+            throw new Error(detail);
+          }
+          return body;
+        },
+
+        valuesFrom(data) {
+          if (Array.isArray(data)) return data.filter(Boolean).map(String);
+          if (!data || typeof data !== 'object') return [];
+          return Object.keys(data).filter((key) => data[key] !== null);
+        },
+
+        async loadSchoolInfo() {
+          try {
+            const info = await this.request(['sekolah', this.schoolId, 'info']);
+            if (info && info.nama_sekolah) this.schoolName = info.nama_sekolah;
+            this.roles = this.normalizeRoles(info && info.roles);
+          } catch (error) {
+            this.notify(`Informasi sekolah tidak dapat dimuat: ${error.message}`, 'error');
+          }
+        },
+
+        normalizeRoles(data) {
+          if (Array.isArray(data)) {
+            return data.map((role) => typeof role === 'string' ? role : role && (role.nama || role.label || role.nama_role)).filter(Boolean);
+          }
+          if (!data || typeof data !== 'object') return [];
+          return Object.entries(data).map(([key, role]) => {
+            if (typeof role === 'string') return role;
+            return role && (role.nama || role.label || role.nama_role) ? (role.nama || role.label || role.nama_role) : key;
+          });
+        },
+
+        async loadYears() {
+          try {
+            const data = await this.request(['sekolah', this.schoolId, 'tahun_ajaran']);
+            this.years = this.valuesFrom(data).sort((a, b) => b.localeCompare(a, 'id', { numeric: true }));
+            if (!this.years.length) this.notify('Belum ada tahun ajaran pada database.', 'error');
+          } catch (error) {
+            this.notify(`Tahun ajaran tidak dapat dimuat: ${error.message}`, 'error');
+          }
+        },
+
+        async loadClasses() {
+          if (!this.selectedYear) return;
+          try {
+            const data = await this.request(['sekolah', this.schoolId, 'tahun_ajaran', this.selectedYear, 'kelas']);
+            this.classes = this.valuesFrom(data).sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+          } catch (error) {
+            this.classes = [];
+            this.notify(`Daftar kelas tidak dapat dimuat: ${error.message}`, 'error');
+          }
+        },
+
+        async changeYear() {
+          this.selectedClass = '';
+          this.classes = [];
+          this.students = [];
+          await this.loadClasses();
+          await this.loadStudents();
+        },
+
+        async loadStudents() {
+          const token = ++this.loadToken;
+          if (!this.selectedYear || !this.selectedClass) {
+            this.students = [];
+            return;
+          }
+          this.loading = true;
+          this.message = '';
+          try {
+            const data = await this.request([
+              'sekolah', this.schoolId, 'tahun_ajaran', this.selectedYear,
+              'kelas', this.selectedClass, 'siswa'
+            ]);
+            if (token !== this.loadToken) return;
+            this.students = Object.entries(data || {}).map(([nisn, student]) => ({
+              nisn,
+              nama: student && (student.nama || student.nama_siswa) ? (student.nama || student.nama_siswa) : 'Tanpa nama',
+              nomorAbsen: student && (student.nomor_absen ?? student.no_absen ?? student.nomorAbsen) != null
+                ? (student.nomor_absen ?? student.no_absen ?? student.nomorAbsen)
+                : '-',
+              status: 'Hadir'
+            })).sort((a, b) => {
+              const numberOrder = Number(a.nomorAbsen) - Number(b.nomorAbsen);
+              return Number.isNaN(numberOrder) || numberOrder === 0
+                ? a.nama.localeCompare(b.nama, 'id')
+                : numberOrder;
+            });
+            await this.loadSavedAttendance(token);
+          } catch (error) {
+            if (token === this.loadToken) {
+              this.students = [];
+              this.notify(`Data siswa tidak dapat dimuat: ${error.message}`, 'error');
+            }
+          } finally {
+            if (token === this.loadToken) this.loading = false;
+          }
+        },
+
+        roleKey() {
+          return this.selectedRole
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '') || 'role';
+        },
+
+        attendancePath() {
+          return [
+            'sekolah', this.schoolId, 'absensi', this.selectedYear,
+            this.selectedDate, this.selectedClass, this.roleKey()
+          ];
+        },
+
+        async loadSavedAttendance(token = this.loadToken) {
+          if (!this.students.length || !this.selectedRole || !this.selectedDate) return;
+          try {
+            const saved = await this.request(this.attendancePath());
+            if (token !== this.loadToken) return;
+            const records = saved && saved.siswa ? saved.siswa : {};
+            this.students = this.students.map((student) => ({
+              ...student,
+              status: records[student.nisn] && records[student.nisn].status
+                ? records[student.nisn].status
+                : 'Hadir'
+            }));
+          } catch (error) {
+            if (token === this.loadToken) this.notify(`Absensi tersimpan tidak dapat dimuat: ${error.message}`, 'error');
+          }
+        },
+
+        async changeAttendanceContext() {
+          const token = this.loadToken;
+          this.students = this.students.map((student) => ({ ...student, status: 'Hadir' }));
+          await this.loadSavedAttendance(token);
+        },
+
+        get visibleStudents() {
+          const query = this.search.trim().toLocaleLowerCase('id');
+          if (!query) return this.students;
+          return this.students.filter((student) =>
+            student.nama.toLocaleLowerCase('id').includes(query) || student.nisn.includes(query)
+          );
+        },
+
+        get markedCount() {
+          return this.students.filter((student) => student.status).length;
+        },
+
+        statusClass(status) {
+          return {
+            Hadir: 'status-hadir',
+            Izin: 'status-izin',
+            Sakit: 'status-sakit',
+            Alpa: 'status-alpa'
+          }[status] || 'status-empty';
+        },
+
+        async saveAttendance() {
+          if (!this.students.length || this.markedCount !== this.students.length || this.saving) return;
+          this.saving = true;
+          this.message = '';
+          const payload = {
+            tahun_ajaran: this.selectedYear,
+            tanggal: this.selectedDate,
+            kelas: this.selectedClass,
+            role: this.selectedRole,
+            diperbarui_pada: new Date().toISOString(),
+            siswa: Object.fromEntries(this.students.map((student) => [student.nisn, {
+              nisn: student.nisn,
+              nama: student.nama,
+              nomor_absen: student.nomorAbsen,
+              status: student.status
+            }]))
+          };
+          try {
+            await this.request(this.attendancePath(), {
+              method: 'PUT',
+              body: JSON.stringify(payload)
+            });
+            this.notify(`Absensi ${this.selectedClass} berhasil disimpan.`, 'success');
+          } catch (error) {
+            this.notify(`Absensi gagal disimpan: ${error.message}`, 'error');
+          } finally {
+            this.saving = false;
+          }
+        },
+
+        notify(text, type = 'info') {
+          this.message = text;
+          this.messageType = type;
+        }
+      };
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="min-h-screen antialiased">
+  <div x-data="attendanceApp()" x-init="init()" x-cloak class="min-h-screen flex flex-col">
+    <header class="sticky top-0 z-50 border-b border-[#e2e9e4] bg-white/95 backdrop-blur">
+      <div class="mx-auto flex min-h-[76px] max-w-7xl flex-col items-stretch justify-center gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:py-0 lg:px-8">
+        <div class="flex min-w-0 items-center gap-3">
+          <img src="https://blogger.googleusercontent.com/img/a/AVvXsEiHvgXgNoGTc_c8ZfAeQr2N2QoT4zMIoX3aGn3aeJK-AJC6G_fOl7JUia9w0510lJMhJmDVoPzvBTFqrJMaEPQMiQ1oGEwH0FJ_dOVDHh7AT0zB2lNjPgV7IzGsKZ5Mbn0Y3UmzzGBJWmz-wL5hxiFG99cRZ1c2n5VOHEMiBvc6Atv7DoUNiRmFmG6INbih=s400" alt="Logo SDN Kanangasari" width="44" height="44" class="h-11 w-11 shrink-0 object-contain">
+          <div class="min-w-0">
+            <p class="truncate font-display text-[15px] font-extrabold text-ink sm:text-base" x-text="schoolName"></p>
+            <p class="mt-0.5 truncate text-xs font-medium text-[#718078]">Sistem Absensi Peserta Didik <span class="px-0.5">•</span> Tahun Ajaran <span class="font-semibold text-[#58675f]" x-text="selectedYear ? selectedYear.replace('_', '/') : 'Memuat...' "></span></p>
+          </div>
+        </div>
+        <div class="flex flex-col items-end">
+          <div class="flex items-center gap-2 text-xs font-semibold text-[#58675f] sm:text-sm">
+            <svg class="h-4 w-4 shrink-0 text-forest" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3v3m8-3v3M4.5 9h15M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span x-text="selectedDate ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Memuat tanggal'"></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-9 lg:px-8">
+      <section class="rise-in mb-6 rounded-xl border border-[#e1e9e3] bg-white p-4 shadow-[0_2px_10px_rgba(29,55,40,0.025)] sm:p-5" aria-labelledby="filter-heading">
+        <div class="mb-4 flex items-center gap-2">
+          <svg class="h-[18px] w-[18px] text-forest" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M7 12h10m-7 6h4" stroke-linecap="round" /></svg>
+          <h2 id="filter-heading" class="text-sm font-bold text-ink">Pengaturan absensi</h2>
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">1. Tahun ajaran</span>
+            <select x-model="selectedYear" @change="changeYear()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10" :disabled="!years.length">
+              <option value="" disabled>Pilih tahun ajaran</option>
+              <template x-for="year in years" :key="year"><option :value="year" x-text="year.replace('_', '/')"></option></template>
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">2. Tanggal</span>
+            <input type="date" x-model="selectedDate" @change="changeAttendanceContext()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">3. Kelas</span>
+            <select x-model="selectedClass" @change="loadStudents()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10" :disabled="!classes.length">
+              <option value="" disabled>Pilih kelas</option>
+              <template x-for="className in classes" :key="className"><option :value="className" x-text="className"></option></template>
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">4. Role</span>
+            <select x-model="selectedRole" @change="changeAttendanceContext()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10" :disabled="!roles.length">
+              <option value="" disabled>Pilih role</option>
+              <template x-for="role in roles" :key="role"><option :value="role" x-text="role"></option></template>
+            </select>
+          </label>
+        </div>
+        <p x-show="!roles.length" class="mt-3 text-xs text-[#8a570a]">Daftar role belum tersedia di `sekolah/20205428/info/roles`.</p>
+      </section>
+
+      <section class="rise-in overflow-hidden rounded-xl border border-[#e1e9e3] bg-white shadow-[0_2px_10px_rgba(29,55,40,0.025)]" aria-labelledby="students-heading">
+        <div class="flex flex-col gap-4 border-b border-[#e8eeea] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div class="flex items-center gap-3">
+            <div class="grid h-9 w-9 place-items-center rounded-lg bg-mint text-forest" aria-hidden="true">
+              <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20m6-8a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6-7.5a4 4 0 0 1 0 7.75M17 15h.5a3.5 3.5 0 0 1 3.5 3.5V20" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </div>
+            <div>
+              <h2 id="students-heading" class="text-sm font-bold text-ink">Daftar peserta didik</h2>
+              <p class="mt-0.5 text-xs text-[#7b8981]"><span x-text="students.length"></span> siswa <span x-show="selectedClass">·</span> <span x-text="selectedClass"></span></p>
+            </div>
+          </div>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label class="relative block">
+              <span class="sr-only">Cari nama atau NISN</span>
+              <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#849189]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5" stroke-linecap="round"/></svg>
+              <input type="search" x-model="search" placeholder="Cari siswa..." class="h-10 w-full rounded-lg border border-[#dce5df] bg-white pl-9 pr-3 text-sm outline-none placeholder:text-[#9aa59e] focus:border-forest focus:ring-2 focus:ring-[#176b52]/10 sm:w-48">
+            </label>
+          </div>
+        </div>
+
+        <div class="divide-y divide-[#edf1ee] sm:hidden">
+          <div x-show="loading" class="px-4 py-10 text-center text-sm text-[#718078]">
+            <span class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin text-forest" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z"/></svg>Memuat daftar siswa...</span>
+          </div>
+          <div x-show="!loading && visibleStudents.length === 0" class="px-4 py-10 text-center">
+            <p class="text-sm font-semibold text-ink" x-text="search ? 'Siswa tidak ditemukan' : 'Belum ada data siswa'"></p>
+            <p class="mt-1 text-xs text-[#849189]" x-text="search ? 'Coba kata kunci nama atau NISN lain.' : 'Pilih kelas untuk melihat daftar siswa.'"></p>
+          </div>
+          <template x-for="student in visibleStudents" :key="`mobile-${student.nisn}`">
+            <article class="px-4 py-3.5">
+              <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                  <div class="mb-1 flex items-center gap-2">
+                    <span class="shrink-0 rounded bg-[#f1f5f2] px-1.5 py-0.5 text-center text-[11px] font-bold tabular-nums text-[#637269]" x-text="student.nomorAbsen"></span>
+                    <span class="truncate font-mono text-[11px] tabular-nums text-[#849189]" x-text="student.nisn"></span>
+                  </div>
+                  <p class="break-words text-sm font-semibold leading-snug text-ink" x-text="student.nama"></p>
+                </div>
+                <label class="block w-[118px] shrink-0">
+                  <span class="sr-only" x-text="`Kehadiran ${student.nama}`"></span>
+                  <select x-model="student.status" class="status-select w-full rounded-lg border px-2 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-[#176b52]/15" :class="statusClass(student.status)">
+                    <option value="">Pilih status</option>
+                    <option value="Hadir">Hadir</option>
+                    <option value="Izin">Izin</option>
+                    <option value="Sakit">Sakit</option>
+                    <option value="Alpa">Alpa</option>
+                  </select>
+                </label>
+              </div>
+            </article>
+          </template>
+        </div>
+
+        <div class="hidden overflow-x-auto sm:block">
+          <table class="w-full min-w-[650px] border-collapse text-left">
+            <thead>
+              <tr class="bg-[#f8faf8] text-[11px] font-bold uppercase tracking-[0.08em] text-[#849189]">
+                <th scope="col" class="w-[88px] px-5 py-3.5 text-center">No.</th>
+                <th scope="col" class="w-[190px] px-4 py-3.5">NISN</th>
+                <th scope="col" class="px-4 py-3.5">Nama siswa</th>
+                <th scope="col" class="w-[220px] px-5 py-3.5">Kehadiran</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#edf1ee]">
+              <template x-if="loading">
+                <tr><td colspan="4" class="px-5 py-14 text-center text-sm text-[#718078]">
+                  <span class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin text-forest" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z"/></svg>Memuat daftar siswa...</span>
+                </td></tr>
+              </template>
+              <template x-if="!loading && visibleStudents.length === 0">
+                <tr><td colspan="4" class="px-5 py-14 text-center">
+                  <div class="mx-auto grid h-11 w-11 place-items-center rounded-full bg-[#f1f5f2] text-[#7a8980]">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20m6-8a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke-linecap="round"/></svg>
+                  </div>
+                  <p class="mt-3 text-sm font-semibold text-ink" x-text="search ? 'Siswa tidak ditemukan' : 'Belum ada data siswa' "></p>
+                  <p class="mt-1 text-xs text-[#849189]" x-text="search ? 'Coba kata kunci nama atau NISN lain.' : 'Pilih tahun ajaran dan kelas yang memiliki data siswa.' "></p>
+                </td></tr>
+              </template>
+              <template x-for="(student, index) in visibleStudents" :key="student.nisn">
+                <tr class="transition-colors hover:bg-[#fbfcfb]">
+                  <td class="px-5 py-3.5 text-center text-sm font-semibold tabular-nums text-[#75837b]" x-text="student.nomorAbsen"></td>
+                  <td class="px-4 py-3.5 font-mono text-xs tabular-nums text-[#75837b]" x-text="student.nisn"></td>
+                  <td class="px-4 py-3.5 text-sm font-semibold text-ink" x-text="student.nama"></td>
+                  <td class="px-5 py-2.5">
+                    <label class="block">
+                      <span class="sr-only" x-text="`Kehadiran ${student.nama}`"></span>
+                      <select x-model="student.status" class="status-select w-full rounded-lg border px-3 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-[#176b52]/15" :class="statusClass(student.status)">
+                        <option value="">Pilih status</option>
+                        <option value="Hadir">Hadir</option>
+                        <option value="Izin">Izin</option>
+                        <option value="Sakit">Sakit</option>
+                        <option value="Alpa">Alpa</option>
+                      </select>
+                    </label>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e8eeea] px-4 py-3 text-xs font-semibold text-[#637269] sm:px-5" aria-live="polite">
+          <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#54a873]"></span><span x-text="students.filter(s => s.status === 'Hadir').length"></span> hadir</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#5b91c5]"></span><span x-text="students.filter(s => s.status === 'Izin').length"></span> izin</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#dba93b]"></span><span x-text="students.filter(s => s.status === 'Sakit').length"></span> sakit</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#d46762]"></span><span x-text="students.filter(s => s.status === 'Alpa').length"></span> alpa</span>
+        </div>
+
+        <div class="flex flex-col gap-3 border-t border-[#e8eeea] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p class="text-xs text-[#7b8981]" x-show="students.length">
+            <span class="font-semibold text-ink" x-text="markedCount"></span> dari <span x-text="students.length"></span> siswa sudah ditandai
+          </p>
+          <p class="text-xs text-[#7b8981]" x-show="!students.length">Pilih kelas untuk mulai mengisi absensi.</p>
+          <button type="button" @click="saveAttendance()" :disabled="saving || loading || !students.length || markedCount !== students.length || !selectedRole" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-forest px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#105a44] focus:outline-none focus:ring-2 focus:ring-forest focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#a9bdb2] disabled:shadow-none sm:min-w-[160px]">
+            <svg x-show="!saving" class="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M5 4h12l3 3v13H4V5a1 1 0 0 1 1-1Zm3 0v6h8V4M8 20v-6h8v6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg x-show="saving" class="h-[17px] w-[17px] animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z"/></svg>
+            <span x-text="saving ? 'Menyimpan...' : 'Simpan absensi'"></span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <div x-show="message" x-transition.opacity class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" role="presentation">
+      <section role="dialog" aria-modal="true" aria-labelledby="notification-title" class="w-full max-w-xs overflow-hidden rounded-xl bg-white shadow-2xl">
+        <header class="flex items-center justify-between gap-3 px-5 py-3.5 text-white" :class="messageType === 'error' ? 'bg-[#b74740]' : 'bg-[#168451]'">
+          <h2 id="notification-title" class="font-display text-base font-bold">Notifikasi</h2>
+          <button type="button" @click="message = ''" class="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white/90 transition hover:bg-white/15 hover:text-white" aria-label="Tutup pemberitahuan">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18" stroke-linecap="round"/></svg>
+          </button>
+        </header>
+        <div class="min-h-[72px] border-b border-[#e8ece9] px-5 py-5 text-base leading-relaxed text-[#26342d]" role="status" aria-live="polite" x-text="message"></div>
+        <footer class="flex justify-end p-4">
+          <button type="button" @click="message = ''" class="rounded-md bg-[#168451] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#117345] focus:outline-none focus:ring-2 focus:ring-[#168451] focus:ring-offset-2">Tutup</button>
+        </footer>
+      </section>
+    </div>
+
+    <footer class="mt-8 border-t border-[#e1e9e3] bg-white">
+      <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-1 px-4 py-5 text-center text-xs text-[#849189] sm:flex-row sm:px-6 sm:text-left lg:px-8">
+        <p>© <span x-text="new Date().getFullYear()"></span> <span x-text="schoolName"></span>. Hak cipta dilindungi.</p>
+        <p>Absensi Peserta Didik</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
