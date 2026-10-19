@@ -696,14 +696,14 @@
                     <p class="break-words text-[12px] font-semibold leading-snug text-ink" x-text="student.nama"></p>
                     <span x-show="previousStatuses[student.nisn]" class="rounded border px-1.5 py-0.5 text-[10px] font-bold" :class="statusClass(previousStatuses[student.nisn])" x-text="`Kemarin: ${previousStatuses[student.nisn]}`"></span>
                   </div>
-                  <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[7.5px] leading-tight font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
+                  <div class="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[9px] leading-[1.2] font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
                     <span x-show="summaryLoading">Memuat...</span>
                     <template x-if="!summaryLoading && summaryFor(student.nisn).total">
                       <span class="contents">
-                        <span class="inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-[#54a873]"></span><span x-text="summaryFor(student.nisn).Hadir"></span> hadir</span>
-                        <span class="inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-[#5b91c5]"></span><span x-text="summaryFor(student.nisn).Izin"></span> izin</span>
-                        <span class="inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-[#dba93b]"></span><span x-text="summaryFor(student.nisn).Sakit"></span> sakit</span>
-                        <span class="inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-[#d46762]"></span><span x-text="summaryFor(student.nisn).Alpa"></span> alpa</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#54a873]"></span><span x-text="summaryFor(student.nisn).Hadir"></span> hadir</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#5b91c5]"></span><span x-text="summaryFor(student.nisn).Izin"></span> izin</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#dba93b]"></span><span x-text="summaryFor(student.nisn).Sakit"></span> sakit</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#d46762]"></span><span x-text="summaryFor(student.nisn).Alpa"></span> alpa</span>
                       </span>
                     </template>
                     <span x-show="summaryError">Tidak tersedia</span>
