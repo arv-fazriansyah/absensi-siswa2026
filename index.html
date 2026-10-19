@@ -823,38 +823,38 @@
       </section>
 
       <section class="rise-in overflow-hidden rounded-xl border border-[#e1e9e3] bg-white shadow-[0_2px_10px_rgba(29,55,40,0.025)]" aria-labelledby="monthly-report-heading">
-        <div class="flex flex-col gap-4 border-b border-[#e8eeea] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <h2 id="monthly-report-heading" class="text-sm font-bold text-ink">Rekap absensi</h2>
-              <p class="mt-1 text-xs text-[#7b8981]" x-text="reportPeriod === 'semester' ? 'Ringkasan absensi siswa pada semester ini.' : 'Ringkasan absensi siswa pada bulan ini.'"></p>
-            </div>
-            <button type="button" @click="showReport = !showReport" :aria-expanded="showReport" class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#dce5df] bg-white px-3 text-xs font-bold text-forest transition hover:bg-[#f4f8f5] focus:outline-none focus:ring-2 focus:ring-forest focus:ring-offset-2">
-              <span x-text="showReport ? 'Sembunyikan' : 'Tampilkan'"></span>
-              <svg class="h-4 w-4 transition-transform" :class="showReport ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
+        <div class="flex flex-col gap-4 border-b border-[#e8eeea] px-4 py-4 sm:px-5">
+          <div>
+            <h2 id="monthly-report-heading" class="text-sm font-bold text-ink">Rekap absensi</h2>
+            <p class="mt-1 text-xs text-[#7b8981]" x-text="reportPeriod === 'semester' ? 'Ringkasan absensi siswa pada semester ini.' : 'Ringkasan absensi siswa pada bulan ini.'"></p>
           </div>
-          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label class="block">
-              <span class="sr-only">Pilih periode rekap</span>
-              <select x-model="reportPeriod" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
-                <option value="monthly">Bulanan</option>
-                <option value="semester">Per semester</option>
-              </select>
-            </label>
-            <label x-show="reportPeriod === 'monthly'" class="block">
-              <span class="sr-only">Pilih bulan rekap</span>
-              <select x-model="selectedMonth" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10 sm:min-w-44">
-                <template x-for="month in academicMonths" :key="month.value"><option :value="month.value" x-text="month.label"></option></template>
-              </select>
-            </label>
-            <label x-show="reportPeriod === 'semester'" class="block">
-              <span class="sr-only">Pilih semester rekap</span>
-              <select x-model="selectedSemester" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10 sm:min-w-52">
-                <template x-for="semester in academicSemesters" :key="semester.value"><option :value="semester.value" x-text="semester.label"></option></template>
-              </select>
-            </label>
-            <button type="button" @click="downloadReport()" :disabled="!students.length || summaryLoading || summaryError || !selectedRole" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-forest px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#105a44] focus:outline-none focus:ring-2 focus:ring-forest focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#a9bdb2] disabled:shadow-none">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-1">
+              <label class="block">
+                <span class="sr-only">Pilih periode rekap</span>
+                <select x-model="reportPeriod" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
+                  <option value="monthly">Per bulan</option>
+                  <option value="semester">Per semester</option>
+                </select>
+              </label>
+              <label x-show="reportPeriod === 'monthly'" class="block">
+                <span class="sr-only">Pilih bulan rekap</span>
+                <select x-model="selectedMonth" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10 sm:min-w-44">
+                  <template x-for="month in academicMonths" :key="month.value"><option :value="month.value" x-text="month.label"></option></template>
+                </select>
+              </label>
+              <label x-show="reportPeriod === 'semester'" class="block">
+                <span class="sr-only">Pilih semester rekap</span>
+                <select x-model="selectedSemester" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10 sm:min-w-52">
+                  <template x-for="semester in academicSemesters" :key="semester.value"><option :value="semester.value" x-text="semester.label"></option></template>
+                </select>
+              </label>
+              <button type="button" @click="showReport = !showReport" :aria-expanded="showReport" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#e5d38b] bg-[#f7d65a] px-4 text-sm font-bold text-[#4d3b00] shadow-sm transition hover:bg-[#f0c83a] focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2">
+                <span x-text="showReport ? 'Sembunyikan' : 'Tampilkan'"></span>
+                <svg class="h-4 w-4 transition-transform" :class="showReport ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+            <button type="button" @click="downloadReport()" :disabled="!students.length || summaryLoading || summaryError || !selectedRole" class="ml-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-forest px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#105a44] focus:outline-none focus:ring-2 focus:ring-forest focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#a9bdb2] disabled:shadow-none">
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Unduh Excel
             </button>
