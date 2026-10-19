@@ -31,6 +31,14 @@
     body { background: #f7f8f7; color: #26342d; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     [x-cloak] { display: none !important; }
     .control { min-height: 46px; }
+    input[type="date"] {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0; }
     .status-select { transition: none; }
     .status-empty { background: #f3f5f4; color: #66756e; }
     .status-hadir { background: #e3f4e9; color: #176b3b; border-color: #b9dfc5; }
@@ -603,25 +611,28 @@
           <h2 id="filter-heading" class="text-sm font-bold text-ink">Pengaturan absensi</h2>
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <label class="block">
+          <label class="block min-w-0">
             <span class="mb-1.5 block text-xs font-semibold text-[#637269]">1. Tahun ajaran</span>
             <select x-model="selectedYear" @change="changeYear()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10" :disabled="!years.length">
               <option value="" disabled>Pilih tahun ajaran</option>
               <template x-for="year in years" :key="year"><option :value="year" x-text="year.replace('_', '/')"></option></template>
             </select>
           </label>
-          <label class="block">
+          <label class="block min-w-0 sm:col-span-2 lg:col-span-1">
             <span class="mb-1.5 block text-xs font-semibold text-[#637269]">2. Tanggal</span>
-            <input type="date" x-model="selectedDate" @change="changeAttendanceContext()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
+            <span class="relative block">
+              <input type="date" x-model="selectedDate" @change="changeAttendanceContext()" aria-label="Pilih tanggal absensi" class="control block w-full min-w-0 max-w-full box-border rounded-lg border border-[#dce5df] bg-white px-3 pr-10 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
+              <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#637269]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3v3m8-3v3M4.5 9h15M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
           </label>
-          <label class="block">
+          <label class="block min-w-0">
             <span class="mb-1.5 block text-xs font-semibold text-[#637269]">3. Kelas</span>
             <select x-model="selectedClass" @change="loadStudents()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10" :disabled="!classes.length">
               <option value="" disabled>Pilih kelas</option>
               <template x-for="className in classes" :key="className"><option :value="className" x-text="className"></option></template>
             </select>
           </label>
-          <label class="block">
+          <label class="block min-w-0">
             <span class="mb-1.5 block text-xs font-semibold text-[#637269]">4. Role</span>
             <select x-model="selectedRole" @change="changeAttendanceRole()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10" :disabled="!roles.length">
               <option value="" disabled>Pilih role</option>
