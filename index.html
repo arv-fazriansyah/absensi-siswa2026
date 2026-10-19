@@ -388,6 +388,12 @@
           return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         },
 
+        previousDayName() {
+          if (!this.selectedDate) return 'Hari sebelumnya';
+          const date = new Date(`${this.previousDate()}T12:00:00`);
+          return date.toLocaleDateString('id-ID', { weekday: 'long' });
+        },
+
         async loadSavedAttendance(token = this.loadToken) {
           const contextToken = ++this.attendanceContextToken;
           if (!this.students.length || !this.selectedRole || !this.selectedDate) {
@@ -694,7 +700,7 @@
                   </div>
                   <div class="flex flex-col items-start gap-1.5">
                     <p class="break-words text-[12px] font-semibold leading-snug text-ink" x-text="student.nama"></p>
-                    <span x-show="previousStatuses[student.nisn]" class="rounded border px-1.5 py-0.5 text-[10px] font-bold" :class="statusClass(previousStatuses[student.nisn])" x-text="`Kemarin: ${previousStatuses[student.nisn]}`"></span>
+                    <span x-show="previousStatuses[student.nisn]" class="rounded border px-1.5 py-0.5 text-[10px] font-bold" :class="statusClass(previousStatuses[student.nisn])" x-text="`${previousDayName()}: ${previousStatuses[student.nisn]}`"></span>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[9px] leading-[1.2] font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
                     <span x-show="summaryLoading">Memuat...</span>
@@ -762,7 +768,7 @@
                   <td class="px-4 py-3.5 text-sm font-semibold text-ink">
                     <div class="flex flex-wrap items-center gap-2">
                       <span x-text="student.nama"></span>
-                      <span x-show="previousStatuses[student.nisn]" class="rounded border px-1.5 py-0.5 text-[10px] font-bold" :class="statusClass(previousStatuses[student.nisn])" x-text="`Kemarin: ${previousStatuses[student.nisn]}`"></span>
+                      <span x-show="previousStatuses[student.nisn]" class="rounded border px-1.5 py-0.5 text-[10px] font-bold" :class="statusClass(previousStatuses[student.nisn])" x-text="`${previousDayName()}: ${previousStatuses[student.nisn]}`"></span>
                     </div>
                     <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-normal leading-relaxed text-[#637269]">
                       <span x-show="summaryLoading">Memuat...</span>
