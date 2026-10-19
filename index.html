@@ -504,7 +504,7 @@
                     <p class="break-words text-[12px] font-semibold leading-snug text-ink" x-text="student.nama"></p>
                     <span x-show="previousStatuses[student.nisn]" class="rounded border px-1.5 py-0.5 text-[10px] font-bold" :class="statusClass(previousStatuses[student.nisn])" x-text="`Kemarin: ${previousStatuses[student.nisn]}`"></span>
                   </div>
-                  <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[7px] leading-tight font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
+                  <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[7.5px] leading-tight font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
                     <span x-show="summaryLoading">Memuat...</span>
                     <template x-if="!summaryLoading && summaryFor(student.nisn).total">
                       <span class="contents">
