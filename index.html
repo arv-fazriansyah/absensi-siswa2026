@@ -82,6 +82,7 @@
         selectedMonth: '',
         reportPeriod: 'monthly',
         selectedSemester: '1',
+        showReport: false,
         currentDate: '',
         selectedClass: '',
         selectedRole: '',
@@ -590,7 +591,7 @@
           <img src="https://blogger.googleusercontent.com/img/a/AVvXsEiHvgXgNoGTc_c8ZfAeQr2N2QoT4zMIoX3aGn3aeJK-AJC6G_fOl7JUia9w0510lJMhJmDVoPzvBTFqrJMaEPQMiQ1oGEwH0FJ_dOVDHh7AT0zB2lNjPgV7IzGsKZ5Mbn0Y3UmzzGBJWmz-wL5hxiFG99cRZ1c2n5VOHEMiBvc6Atv7DoUNiRmFmG6INbih=s400" alt="Logo" width="44" height="44" class="h-10 w-10 shrink-0 object-contain sm:h-11 sm:w-11">
           <div class="min-w-0">
             <p class="truncate font-display text-[12px] font-extrabold text-white sm:text-base" x-text="schoolName || (schoolInfoLoaded ? 'Nama sekolah belum tersedia' : 'Memuat nama sekolah...')"></p>
-            <p class="mt-0.5 text-[9px] font-medium leading-tight text-white/75 sm:text-xs"><span class="block sm:inline">Sistem Absensi Peserta Didik</span><span class="hidden px-0.5 sm:inline">•</span><span class="block sm:inline">Tahun Ajaran <span class="font-semibold text-white" x-text="selectedYear ? selectedYear.replace('_', '/') : 'Memuat...' "></span></span></p>
+            <p class="mt-0.5 text-[8px] font-medium leading-tight text-white/75 sm:text-xs"><span class="block sm:inline">Sistem Absensi Peserta Didik</span><span class="hidden px-0.5 sm:inline">•</span><span class="block sm:inline">Tahun Ajaran <span class="font-semibold text-white" x-text="selectedYear ? selectedYear.replace('_', '/') : 'Memuat...' "></span></span></p>
           </div>
         </div>
         <div class="flex shrink-0 justify-end sm:items-center">
@@ -817,9 +818,15 @@
 
       <section class="rise-in overflow-hidden rounded-xl border border-[#e1e9e3] bg-white shadow-[0_2px_10px_rgba(29,55,40,0.025)]" aria-labelledby="monthly-report-heading">
         <div class="flex flex-col gap-4 border-b border-[#e8eeea] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div>
-            <h2 id="monthly-report-heading" class="text-sm font-bold text-ink">Rekap absensi</h2>
-            <p class="mt-1 text-xs text-[#7b8981]" x-text="reportPeriod === 'semester' ? 'Jumlah kehadiran siswa selama semester yang dipilih.' : 'Kode harian: H = Hadir, I = Izin, S = Sakit, A = Alpa.'"></p>
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h2 id="monthly-report-heading" class="text-sm font-bold text-ink">Rekap absensi</h2>
+              <p class="mt-1 text-xs text-[#7b8981]" x-text="reportPeriod === 'semester' ? 'Jumlah kehadiran siswa selama semester yang dipilih.' : 'Kode harian: H = Hadir, I = Izin, S = Sakit, A = Alpa.'"></p>
+            </div>
+            <button type="button" @click="showReport = !showReport" :aria-expanded="showReport" class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#dce5df] bg-white px-3 text-xs font-bold text-forest transition hover:bg-[#f4f8f5] focus:outline-none focus:ring-2 focus:ring-forest focus:ring-offset-2">
+              <span x-text="showReport ? 'Sembunyikan' : 'Tampilkan'"></span>
+              <svg class="h-4 w-4 transition-transform" :class="showReport ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
           </div>
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
             <label class="block">
@@ -847,10 +854,10 @@
             </button>
           </div>
         </div>
-        <div x-show="summaryLoading" class="px-5 py-8 text-center text-sm text-[#7b8981]" role="status">Memuat data rekap...</div>
-        <div x-show="!summaryLoading && summaryError" class="px-5 py-8 text-center text-sm text-[#a13f3b]" role="alert">Rekap tidak dapat dimuat. Periksa koneksi lalu pilih ulang kelas atau role.</div>
-        <div x-show="!summaryLoading && !summaryError && !students.length" class="px-5 py-8 text-center text-sm text-[#7b8981]">Pilih kelas untuk melihat rekap.</div>
-        <div x-show="!summaryLoading && !summaryError && students.length && reportPeriod === 'monthly'" class="space-y-3 bg-[#f8faf8] p-3 sm:hidden">
+        <div x-show="showReport && summaryLoading" class="px-5 py-8 text-center text-sm text-[#7b8981]" role="status">Memuat data rekap...</div>
+        <div x-show="showReport && !summaryLoading && summaryError" class="px-5 py-8 text-center text-sm text-[#a13f3b]" role="alert">Rekap tidak dapat dimuat. Periksa koneksi lalu pilih ulang kelas atau role.</div>
+        <div x-show="showReport && !summaryLoading && !summaryError && !students.length" class="px-5 py-8 text-center text-sm text-[#7b8981]">Pilih kelas untuk melihat rekap.</div>
+        <div x-show="showReport && !summaryLoading && !summaryError && students.length && reportPeriod === 'monthly'" class="space-y-3 bg-[#f8faf8] p-3 sm:hidden">
           <template x-for="(student, index) in monthlyReport" :key="`monthly-mobile-${student.nisn}`">
             <article class="rounded-xl border border-[#e8eeea] bg-white p-3 shadow-[0_1px_3px_rgba(29,55,40,0.04)]">
               <div class="mb-3 flex min-w-0 items-center gap-2.5">
@@ -898,7 +905,7 @@
             </article>
           </template>
         </div>
-        <div x-show="!summaryLoading && !summaryError && students.length && reportPeriod === 'monthly'" class="hidden overflow-x-auto overscroll-x-contain px-3 py-2 sm:block sm:px-5 sm:py-3" role="region" aria-label="Tabel rekap absensi bulanan" tabindex="0">
+        <div x-show="showReport && !summaryLoading && !summaryError && students.length && reportPeriod === 'monthly'" class="hidden overflow-x-auto overscroll-x-contain px-3 py-2 sm:block sm:px-5 sm:py-3" role="region" aria-label="Tabel rekap absensi bulanan" tabindex="0">
           <table class="w-full table-fixed border-collapse text-center text-[10px]">
             <thead class="bg-[#f8faf8] font-bold text-[#637269]">
               <tr>
@@ -911,10 +918,10 @@
                 <template x-for="day in monthlyDays" :key="`report-day-${day}`">
                   <th scope="col" class="whitespace-nowrap border-r border-[#e8eeea] px-0 py-2" :class="isSunday(day) ? 'bg-red-50 text-red-600' : ''" x-text="day"></th>
                 </template>
-                <th scope="col" class="w-7 border-r border-[#e8eeea] px-0 py-2">H</th>
-                <th scope="col" class="w-7 border-r border-[#e8eeea] px-0 py-2">I</th>
-                <th scope="col" class="w-7 border-r border-[#e8eeea] px-0 py-2">S</th>
-                <th scope="col" class="w-7 px-0 py-2">A</th>
+                <th scope="col" class="w-7 border-r border-[#e8eeea] px-0 py-2 text-green-700">H</th>
+                <th scope="col" class="w-7 border-r border-[#e8eeea] px-0 py-2 text-blue-700">I</th>
+                <th scope="col" class="w-7 border-r border-[#e8eeea] px-0 py-2 text-amber-700">S</th>
+                <th scope="col" class="w-7 px-0 py-2 text-red-700">A</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[#edf1ee]">
@@ -923,18 +930,18 @@
                   <td class="overflow-hidden border-r border-[#edf1ee] px-1 py-2 font-semibold tabular-nums" x-text="student.nomorAbsen === '-' ? index + 1 : student.nomorAbsen"></td>
                   <td class="max-w-0 overflow-hidden text-ellipsis whitespace-nowrap border-r border-[#edf1ee] px-2 py-2 text-left font-semibold" :title="student.nama" x-text="student.nama"></td>
                   <template x-for="day in monthlyDays" :key="`report-${student.nisn}-${day}`">
-                    <td class="whitespace-nowrap border-r border-[#edf1ee] px-0 py-2 font-semibold" :class="isSunday(day) ? 'bg-red-50 text-red-600' : ''" x-text="student.dailyStatuses[day] || ''"></td>
+                    <td class="whitespace-nowrap border-r border-[#edf1ee] px-0 py-2 font-semibold" :class="[isSunday(day) ? 'bg-red-50' : '', student.dailyStatuses[day] === 'H' ? 'text-green-700' : student.dailyStatuses[day] === 'I' ? 'text-blue-700' : student.dailyStatuses[day] === 'S' ? 'text-amber-700' : student.dailyStatuses[day] === 'A' ? 'text-red-700' : 'text-[#26342d]']" x-text="student.dailyStatuses[day] || ''"></td>
                   </template>
-                  <td class="border-r border-[#edf1ee] px-0 py-2 font-semibold" x-text="student.totals.H"></td>
-                  <td class="border-r border-[#edf1ee] px-0 py-2 font-semibold" x-text="student.totals.I"></td>
-                  <td class="border-r border-[#edf1ee] px-0 py-2 font-semibold" x-text="student.totals.S"></td>
-                  <td class="px-0 py-2 font-semibold" x-text="student.totals.A"></td>
+                  <td class="border-r border-[#edf1ee] px-0 py-2 font-semibold text-green-700" x-text="student.totals.H"></td>
+                  <td class="border-r border-[#edf1ee] px-0 py-2 font-semibold text-blue-700" x-text="student.totals.I"></td>
+                  <td class="border-r border-[#edf1ee] px-0 py-2 font-semibold text-amber-700" x-text="student.totals.S"></td>
+                  <td class="px-0 py-2 font-semibold text-red-700" x-text="student.totals.A"></td>
                 </tr>
               </template>
             </tbody>
           </table>
         </div>
-        <div x-show="!summaryLoading && !summaryError && students.length && reportPeriod === 'semester'" class="space-y-3 bg-[#f8faf8] p-3 sm:hidden">
+        <div x-show="showReport && !summaryLoading && !summaryError && students.length && reportPeriod === 'semester'" class="space-y-3 bg-[#f8faf8] p-3 sm:hidden">
           <template x-for="(student, index) in semesterReport" :key="`semester-mobile-${student.nisn}`">
             <article class="rounded-xl border border-[#e8eeea] bg-white p-3 shadow-[0_1px_3px_rgba(29,55,40,0.04)]">
               <div class="mb-3 flex min-w-0 items-center gap-2.5">
@@ -966,7 +973,7 @@
             </article>
           </template>
         </div>
-        <div x-show="!summaryLoading && !summaryError && students.length && reportPeriod === 'semester'" class="hidden overflow-x-auto overscroll-x-contain px-3 py-2 sm:block sm:px-5 sm:py-3" role="region" aria-label="Tabel rekap absensi per semester" tabindex="0">
+        <div x-show="showReport && !summaryLoading && !summaryError && students.length && reportPeriod === 'semester'" class="hidden overflow-x-auto overscroll-x-contain px-3 py-2 sm:block sm:px-5 sm:py-3" role="region" aria-label="Tabel rekap absensi per semester" tabindex="0">
           <table class="w-full border-collapse text-left text-sm">
             <thead class="bg-[#f8faf8] text-[11px] font-bold uppercase tracking-wide text-[#637269]">
               <tr>
