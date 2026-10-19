@@ -31,7 +31,19 @@
     body { background: #f7f8f7; color: #26342d; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     [x-cloak] { display: none !important; }
     .control { min-height: 46px; }
-    input[type="date"] { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+    .date-control {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: .375rem .75rem;
+      color: #26342d;
+      background: #fff;
+      border: 1px solid #dce5df;
+      border-radius: .375rem;
+      font: 400 1rem/1.5 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
     .status-select { transition: none; }
     .status-empty { background: #f3f5f4; color: #66756e; }
     .status-hadir { background: #e3f4e9; color: #176b3b; border-color: #b9dfc5; }
@@ -612,8 +624,8 @@
             </select>
           </label>
           <label class="block min-w-0">
-            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">2. Tanggal</span>
-            <input type="date" x-model="selectedDate" @change="changeAttendanceContext()" class="control block w-full min-w-0 max-w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
+            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">Pilih tanggal</span>
+            <input type="date" x-model="selectedDate" @change="changeAttendanceContext()" class="date-control outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
           </label>
           <label class="block">
             <span class="mb-1.5 block text-xs font-semibold text-[#637269]">3. Kelas</span>
