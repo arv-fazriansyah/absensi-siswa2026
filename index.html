@@ -401,11 +401,11 @@
           <img src="https://blogger.googleusercontent.com/img/a/AVvXsEiHvgXgNoGTc_c8ZfAeQr2N2QoT4zMIoX3aGn3aeJK-AJC6G_fOl7JUia9w0510lJMhJmDVoPzvBTFqrJMaEPQMiQ1oGEwH0FJ_dOVDHh7AT0zB2lNjPgV7IzGsKZ5Mbn0Y3UmzzGBJWmz-wL5hxiFG99cRZ1c2n5VOHEMiBvc6Atv7DoUNiRmFmG6INbih=s400" alt="Logo" width="44" height="44" class="h-10 w-10 shrink-0 object-contain sm:h-11 sm:w-11">
           <div class="min-w-0">
             <p class="truncate font-display text-[12px] font-extrabold text-white sm:text-base" x-text="schoolName || (schoolInfoLoaded ? 'Nama sekolah belum tersedia' : 'Memuat nama sekolah...')"></p>
-            <p class="mt-0.5 text-[9px] font-medium leading-tight text-white/75 sm:text-xs"><span class="block sm:inline">Sistem Absensi Peserta Didik</span><span class="hidden px-0.5 sm:inline">•</span><span class="block sm:inline">Tahun Ajaran <span class="font-semibold text-white" x-text="selectedYear ? selectedYear.replace('_', '/') : 'Memuat...' "></span></span></p>
+            <p class="mt-0.5 text-[7px] font-medium leading-tight text-white/75 sm:text-xs"><span class="block sm:inline">Sistem Absensi Peserta Didik</span><span class="hidden px-0.5 sm:inline">•</span><span class="block sm:inline">Tahun Ajaran <span class="font-semibold text-white" x-text="selectedYear ? selectedYear.replace('_', '/') : 'Memuat...' "></span></span></p>
           </div>
         </div>
         <div class="flex shrink-0 justify-end sm:items-center">
-          <div class="inline-flex max-w-[104px] items-center gap-1 rounded-md border border-white/25 bg-white/10 px-1.5 py-1 text-[9px] font-semibold leading-tight text-white sm:max-w-none sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-sm">
+          <div class="inline-flex max-w-[104px] items-center gap-1 rounded-md border border-white/25 bg-white/10 px-1.5 py-1 text-[7px] font-semibold leading-tight text-white sm:max-w-none sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-sm">
             <svg class="h-3 w-3 shrink-0 text-white sm:h-4 sm:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3v3m8-3v3M4.5 9h15M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
             <span class="text-center sm:hidden" x-text="currentDate ? new Date(`${currentDate}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : ''"></span>
             <span class="hidden text-right sm:inline" x-text="currentDate ? new Date(`${currentDate}T00:00:00`).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''"></span>
@@ -504,14 +504,14 @@
                     <p class="break-words text-sm font-semibold leading-snug text-ink" x-text="student.nama"></p>
                     <span x-show="previousStatuses[student.nisn]" class="rounded border px-1.5 py-0.5 text-[10px] font-bold" :class="statusClass(previousStatuses[student.nisn])" x-text="`Kemarin: ${previousStatuses[student.nisn]}`"></span>
                   </div>
-                  <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
+                  <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[7px] leading-tight font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
                     <span x-show="summaryLoading">Memuat...</span>
                     <template x-if="!summaryLoading && summaryFor(student.nisn).total">
                       <span class="contents">
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#54a873]"></span><span x-text="summaryFor(student.nisn).Hadir"></span> hadir</span>
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#5b91c5]"></span><span x-text="summaryFor(student.nisn).Izin"></span> izin</span>
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#dba93b]"></span><span x-text="summaryFor(student.nisn).Sakit"></span> sakit</span>
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#d46762]"></span><span x-text="summaryFor(student.nisn).Alpa"></span> alpa</span>
+                        <span class="inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-[#54a873]"></span><span x-text="summaryFor(student.nisn).Hadir"></span> hadir</span>
+                        <span class="inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-[#5b91c5]"></span><span x-text="summaryFor(student.nisn).Izin"></span> izin</span>
+                        <span class="inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-[#dba93b]"></span><span x-text="summaryFor(student.nisn).Sakit"></span> sakit</span>
+                        <span class="inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-[#d46762]"></span><span x-text="summaryFor(student.nisn).Alpa"></span> alpa</span>
                       </span>
                     </template>
                     <span x-show="summaryError">Tidak tersedia</span>
