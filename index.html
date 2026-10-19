@@ -7,17 +7,14 @@
   <meta name="description" content="Aplikasi absensi peserta didik.">
   <title>Absensi Peserta Didik</title>
   <link rel="icon" type="image/png" href="https://blogger.googleusercontent.com/img/a/AVvXsEiHvgXgNoGTc_c8ZfAeQr2N2QoT4zMIoX3aGn3aeJK-AJC6G_fOl7JUia9w0510lJMhJmDVoPzvBTFqrJMaEPQMiQ1oGEwH0FJ_dOVDHh7AT0zB2lNjPgV7IzGsKZ5Mbn0Y3UmzzGBJWmz-wL5hxiFG99cRZ1c2n5VOHEMiBvc6Atv7DoUNiRmFmG6INbih=s400">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            sans: ['DM Sans', 'sans-serif'],
-            display: ['Manrope', 'sans-serif']
+            sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+            display: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif']
           },
           colors: {
             ink: '#20312b',
@@ -31,24 +28,32 @@
   </script>
   <style>
     :root { color-scheme: light; }
-    body { background: #f4f7f5; color: #20312b; font-family: 'DM Sans', sans-serif; }
+    body { background: #f7f8f7; color: #26342d; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     [x-cloak] { display: none !important; }
     .control { min-height: 46px; }
-    .status-select { transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
+    .status-select { transition: none; }
     .status-empty { background: #f3f5f4; color: #66756e; }
     .status-hadir { background: #e3f4e9; color: #176b3b; border-color: #b9dfc5; }
     .status-izin { background: #e7f1fb; color: #245e91; border-color: #c8dcef; }
     .status-sakit { background: #fff2d9; color: #8a570a; border-color: #f2dcaa; }
     .status-alpa { background: #fde8e7; color: #a13f3b; border-color: #f1c7c4; }
-    .skeleton { background: linear-gradient(90deg, #e8eeea 25%, #f7f9f8 50%, #e8eeea 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite; }
-    @keyframes skeleton-shimmer { to { background-position: -200% 0; } }
-    .rise-in { animation: rise-in 420ms cubic-bezier(.2,.7,.2,1) both; }
-    @keyframes rise-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .skeleton { background: #edf0ee; }
+    .rise-in { animation: none; }
+    main { gap: 1rem !important; }
+    main > section, main article, [role="dialog"] { border-radius: .5rem !important; box-shadow: none !important; }
+    main > section { border-color: #e1e5e2; }
+    main button, main input, main select, [role="dialog"] button { border-radius: .375rem !important; box-shadow: none !important; }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
   <script>
     const FIREBASE_BASE = 'https://absensi-siswa2026-default-rtdb.asia-southeast1.firebasedatabase.app';
     const SCHOOL_ID = '20205428';
+    const ATTENDANCE_STATUSES = {
+      hadir: { label: 'Hadir', code: 'H' },
+      izin: { label: 'Izin', code: 'I' },
+      sakit: { label: 'Sakit', code: 'S' },
+      alpa: { label: 'Alpa', code: 'A' }
+    };
 
     function attendanceApp() {
       return {
@@ -60,11 +65,15 @@
         roles: [],
         students: [],
         attendanceSummary: {},
+        attendanceHistory: {},
         summaryLoading: false,
         summaryError: false,
         previousStatuses: {},
         selectedYear: '',
         selectedDate: '',
+        selectedMonth: '',
+        reportPeriod: 'monthly',
+        selectedSemester: '1',
         currentDate: '',
         selectedClass: '',
         selectedRole: '',
@@ -89,10 +98,127 @@
           this.selectedYear = this.years.includes(currentAcademicYear)
             ? currentAcademicYear
             : this.years[0];
+          this.setDefaultReportMonth();
           this.updateDocumentTitle();
 
           await this.loadClasses();
           this.selectedRole = this.roles[0] || '';
+        },
+
+        setDefaultReportMonth() {
+          const currentMonth = this.localToday().slice(0, 7);
+          this.selectedMonth = this.academicMonths.some((month) => month.value === currentMonth)
+            ? currentMonth
+            : (this.academicMonths[0] && this.academicMonths[0].value) || currentMonth;
+          this.selectedSemester = Number(this.selectedMonth.slice(-2)) >= 7 ? '1' : '2';
+        },
+
+        get academicMonths() {
+          const match = this.selectedYear.match(/^(\d{4})_(\d{4})$/);
+          const startYear = match ? Number(match[1]) : new Date().getFullYear();
+          return Array.from({ length: 12 }, (_, index) => {
+            const date = new Date(startYear, 6 + index, 1);
+            const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            return {
+              value,
+              label: date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+            };
+          });
+        },
+
+        get academicSemesters() {
+          const match = this.selectedYear.match(/^(\d{4})_(\d{4})$/);
+          const startYear = match ? Number(match[1]) : new Date().getFullYear();
+          return [
+            {
+              value: '1',
+              label: `Semester 1 (Juli–Desember ${startYear})`,
+              start: `${startYear}-07-01`,
+              end: `${startYear}-12-31`
+            },
+            {
+              value: '2',
+              label: `Semester 2 (Januari–Juni ${startYear + 1})`,
+              start: `${startYear + 1}-01-01`,
+              end: `${startYear + 1}-06-30`
+            }
+          ];
+        },
+
+        get monthlyDays() {
+          if (!this.selectedMonth) return [];
+          const [year, month] = this.selectedMonth.split('-').map(Number);
+          return Array.from({ length: new Date(year, month, 0).getDate() }, (_, index) => index + 1);
+        },
+
+        get monthlyCalendarCells() {
+          if (!this.selectedMonth) return [];
+          const [year, month] = this.selectedMonth.split('-').map(Number);
+          const firstWeekday = new Date(year, month - 1, 1).getDay();
+          return [
+            ...Array.from({ length: firstWeekday }, (_, index) => ({ key: `empty-${index}`, day: null })),
+            ...this.monthlyDays.map((day) => ({
+              key: `day-${day}`,
+              day,
+              sunday: new Date(year, month - 1, day).getDay() === 0
+            }))
+          ];
+        },
+
+        isSunday(day) {
+          if (!this.selectedMonth) return false;
+          const [year, month] = this.selectedMonth.split('-').map(Number);
+          return new Date(year, month - 1, day).getDay() === 0;
+        },
+
+        get monthlyReport() {
+          const rows = this.students.map((student) => ({
+            ...student,
+            dailyStatuses: {},
+            totals: { H: 0, I: 0, S: 0, A: 0 }
+          }));
+          if (!this.selectedMonth || !this.selectedClass || !this.selectedRole) return rows;
+
+          const studentsByNisn = new Map(rows.map((row) => [row.nisn, row]));
+          const historyByDate = this.attendanceHistory || {};
+          Object.entries(historyByDate).forEach(([date, attendance]) => {
+            if (!date.startsWith(`${this.selectedMonth}-`)) return;
+            const records = attendance && attendance[this.selectedClass]
+              && attendance[this.selectedClass][this.roleKey()]
+              && attendance[this.selectedClass][this.roleKey()].siswa;
+            Object.entries(records || {}).forEach(([nisn, record]) => {
+              const row = studentsByNisn.get(nisn);
+              const status = ATTENDANCE_STATUSES[String(record && record.status || '').toLowerCase()];
+              if (!row || !status) return;
+              const day = Number(date.slice(-2));
+              row.dailyStatuses[day] = status.code;
+              row.totals[status.code] += 1;
+            });
+          });
+          return rows;
+        },
+
+        get semesterReport() {
+          const rows = this.students.map((student) => ({
+            ...student,
+            totals: { H: 0, I: 0, S: 0, A: 0 }
+          }));
+          const semester = this.academicSemesters.find((item) => item.value === this.selectedSemester);
+          if (!semester || !this.selectedClass || !this.selectedRole) return rows;
+
+          const studentsByNisn = new Map(rows.map((row) => [row.nisn, row]));
+          Object.entries(this.attendanceHistory || {}).forEach(([date, attendance]) => {
+            if (date < semester.start || date > semester.end) return;
+            const records = attendance && attendance[this.selectedClass]
+              && attendance[this.selectedClass][this.roleKey()]
+              && attendance[this.selectedClass][this.roleKey()].siswa;
+            Object.entries(records || {}).forEach(([nisn, record]) => {
+              const row = studentsByNisn.get(nisn);
+              const status = ATTENDANCE_STATUSES[String(record && record.status || '').toLowerCase()];
+              if (row && status) row.totals[status.code] += 1;
+            });
+          });
+          return rows;
         },
 
         updateDocumentTitle() {
@@ -177,9 +303,11 @@
 
         async changeYear() {
           this.updateDocumentTitle();
+          this.setDefaultReportMonth();
           this.selectedClass = '';
           this.classes = [];
           this.students = [];
+          this.attendanceHistory = {};
           await this.loadClasses();
           await this.loadStudents();
         },
@@ -190,6 +318,7 @@
           if (!this.selectedYear || !this.selectedClass) {
             this.summaryToken += 1;
             this.attendanceSummary = {};
+            this.attendanceHistory = {};
             this.summaryLoading = false;
             this.summaryError = false;
             this.students = [];
@@ -291,6 +420,7 @@
           try {
             const history = await this.request(['sekolah', this.schoolId, 'absensi', this.selectedYear]);
             if (token !== this.loadToken || summaryToken !== this.summaryToken) return;
+            this.attendanceHistory = history || {};
             const statusNames = { hadir: 'Hadir', izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
             const summary = {};
             Object.values(history || {}).forEach((classes) => {
@@ -308,6 +438,7 @@
             this.attendanceSummary = summary;
           } catch (error) {
             if (token === this.loadToken && summaryToken === this.summaryToken) {
+              this.attendanceHistory = {};
               this.summaryError = true;
               this.notify(`Ringkasan absensi tidak dapat dimuat: ${error.message}`, 'error');
             }
@@ -353,6 +484,55 @@
           }[status] || 'status-empty';
         },
 
+        downloadReport() {
+          if (!window.XLSX) {
+            this.notify('Fitur Excel belum siap. Periksa koneksi internet lalu muat ulang halaman.', 'error');
+            return;
+          }
+          if (!this.students.length || !this.selectedClass || !this.selectedRole || this.summaryLoading || this.summaryError) {
+            this.notify('Pilih kelas dan role, lalu tunggu data rekap selesai dimuat.', 'error');
+            return;
+          }
+
+          const isSemester = this.reportPeriod === 'semester';
+          const period = isSemester
+            ? this.academicSemesters.find((item) => item.value === this.selectedSemester)
+            : this.academicMonths.find((month) => month.value === this.selectedMonth);
+          const dayColumns = isSemester ? [] : this.monthlyDays;
+          const headers = ['No.', 'Nama', ...dayColumns.map(String), 'H', 'I', 'S', 'A', ...(isSemester ? ['Total'] : [])];
+          const reportRows = isSemester ? this.semesterReport : this.monthlyReport;
+          const rows = reportRows.map((student, index) => [
+            student.nomorAbsen === '-' ? index + 1 : student.nomorAbsen,
+            student.nama,
+            ...dayColumns.map((day) => student.dailyStatuses[day] || ''),
+            student.totals.H,
+            student.totals.I,
+            student.totals.S,
+            student.totals.A,
+            ...(isSemester ? [Object.values(student.totals).reduce((sum, total) => sum + total, 0)] : [])
+          ]);
+          const worksheet = window.XLSX.utils.aoa_to_sheet([
+            [`Rekap Absensi ${isSemester ? 'Semester' : 'Bulanan'} - ${period?.label || ''}`],
+            [`Tahun Ajaran: ${this.selectedYear.replace('_', '/')} | Kelas: ${this.selectedClass} | Role: ${this.selectedRole}`],
+            headers,
+            ...rows
+          ]);
+          worksheet['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }];
+          worksheet['!cols'] = [
+            { wch: 8 },
+            { wch: 28 },
+            ...dayColumns.map(() => ({ wch: 5 })),
+            ...Array.from({ length: isSemester ? 5 : 4 }, () => ({ wch: 8 }))
+          ];
+          const workbook = window.XLSX.utils.book_new();
+          const reportName = isSemester ? 'Rekap Semester' : 'Rekap Bulanan';
+          window.XLSX.utils.book_append_sheet(workbook, worksheet, reportName);
+          const filePeriod = isSemester
+            ? `${this.selectedYear.replace('_', '-')}-semester-${this.selectedSemester}`
+            : this.selectedMonth.replace('-', '');
+          window.XLSX.writeFile(workbook, `rekap-absensi-${this.selectedClass}-${filePeriod}.xlsx`);
+        },
+
         async saveAttendance() {
           if (!this.students.length || this.markedCount !== this.students.length || this.saving) return;
           this.saving = true;
@@ -391,6 +571,7 @@
       };
     }
   </script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="min-h-screen antialiased">
@@ -621,6 +802,187 @@
             <svg x-show="saving" class="h-[17px] w-[17px] animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z"/></svg>
             <span x-text="saving ? 'Menyimpan...' : 'Simpan absensi'"></span>
           </button>
+        </div>
+      </section>
+
+      <section class="rise-in overflow-hidden rounded-xl border border-[#e1e9e3] bg-white shadow-[0_2px_10px_rgba(29,55,40,0.025)]" aria-labelledby="monthly-report-heading">
+        <div class="flex flex-col gap-4 border-b border-[#e8eeea] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div>
+            <h2 id="monthly-report-heading" class="text-sm font-bold text-ink">Rekap absensi</h2>
+            <p class="mt-1 text-xs text-[#7b8981]" x-text="reportPeriod === 'semester' ? 'Jumlah kehadiran siswa selama semester yang dipilih.' : 'Kode harian: H = Hadir, I = Izin, S = Sakit, A = Alpa.'"></p>
+          </div>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <label class="block">
+              <span class="sr-only">Pilih periode rekap</span>
+              <select x-model="reportPeriod" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
+                <option value="monthly">Bulanan</option>
+                <option value="semester">Per semester</option>
+              </select>
+            </label>
+            <label x-show="reportPeriod === 'monthly'" class="block">
+              <span class="sr-only">Pilih bulan rekap</span>
+              <select x-model="selectedMonth" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10 sm:min-w-44">
+                <template x-for="month in academicMonths" :key="month.value"><option :value="month.value" x-text="month.label"></option></template>
+              </select>
+            </label>
+            <label x-show="reportPeriod === 'semester'" class="block">
+              <span class="sr-only">Pilih semester rekap</span>
+              <select x-model="selectedSemester" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10 sm:min-w-52">
+                <template x-for="semester in academicSemesters" :key="semester.value"><option :value="semester.value" x-text="semester.label"></option></template>
+              </select>
+            </label>
+            <button type="button" @click="downloadReport()" :disabled="!students.length || summaryLoading || summaryError || !selectedRole" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-forest px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#105a44] focus:outline-none focus:ring-2 focus:ring-forest focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#a9bdb2] disabled:shadow-none">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Unduh Excel
+            </button>
+          </div>
+        </div>
+        <div x-show="summaryLoading" class="px-5 py-8 text-center text-sm text-[#7b8981]" role="status">Memuat data rekap...</div>
+        <div x-show="!summaryLoading && summaryError" class="px-5 py-8 text-center text-sm text-[#a13f3b]" role="alert">Rekap tidak dapat dimuat. Periksa koneksi lalu pilih ulang kelas atau role.</div>
+        <div x-show="!summaryLoading && !summaryError && !students.length" class="px-5 py-8 text-center text-sm text-[#7b8981]">Pilih kelas untuk melihat rekap.</div>
+        <div x-show="!summaryLoading && !summaryError && students.length && reportPeriod === 'monthly'" class="space-y-3 bg-[#f8faf8] p-3 sm:hidden">
+          <template x-for="(student, index) in monthlyReport" :key="`monthly-mobile-${student.nisn}`">
+            <article class="rounded-xl border border-[#e8eeea] bg-white p-3 shadow-[0_1px_3px_rgba(29,55,40,0.04)]">
+              <div class="mb-3 flex min-w-0 items-center gap-2.5">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-mint text-sm font-extrabold tabular-nums text-forest" x-text="student.nomorAbsen === '-' ? index + 1 : student.nomorAbsen"></span>
+                <div class="min-w-0">
+                  <h3 class="break-words text-sm font-bold leading-snug text-ink" x-text="student.nama"></h3>
+                  <p class="mt-0.5 text-[10px] font-medium text-[#849189]" x-text="`NISN ${student.nisn}`"></p>
+                </div>
+              </div>
+
+              <div class="mb-3 grid grid-cols-4 gap-1.5 text-center" :aria-label="`Jumlah kehadiran ${student.nama}`">
+                <div class="rounded-lg border border-green-100 bg-green-50 px-1 py-2 text-green-800">
+                  <p class="text-[9px] font-semibold uppercase tracking-wide text-green-700">Hadir</p>
+                  <p class="mt-0.5 text-sm font-extrabold tabular-nums" x-text="student.totals.H"></p>
+                </div>
+                <div class="rounded-lg border border-blue-100 bg-blue-50 px-1 py-2 text-blue-800">
+                  <p class="text-[9px] font-semibold uppercase tracking-wide text-blue-700">Izin</p>
+                  <p class="mt-0.5 text-sm font-extrabold tabular-nums" x-text="student.totals.I"></p>
+                </div>
+                <div class="rounded-lg border border-amber-100 bg-amber-50 px-1 py-2 text-amber-800">
+                  <p class="text-[9px] font-semibold uppercase tracking-wide text-amber-700">Sakit</p>
+                  <p class="mt-0.5 text-sm font-extrabold tabular-nums" x-text="student.totals.S"></p>
+                </div>
+                <div class="rounded-lg border border-red-100 bg-red-50 px-1 py-2 text-red-800">
+                  <p class="text-[9px] font-semibold uppercase tracking-wide text-red-700">Alpa</p>
+                  <p class="mt-0.5 text-sm font-extrabold tabular-nums" x-text="student.totals.A"></p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-7 gap-1 text-center text-[9px] font-bold text-[#849189]" aria-hidden="true">
+                <span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span>
+              </div>
+              <div class="mt-1 grid grid-cols-7 gap-1" :aria-label="`Rekap harian ${student.nama}`">
+                <template x-for="cell in monthlyCalendarCells" :key="`mobile-${student.nisn}-${cell.key}`">
+                  <div class="min-h-10 rounded-lg border px-0.5 py-1 text-center" :class="!cell.day ? 'border-transparent bg-transparent' : cell.sunday ? 'border-red-100 bg-red-50 text-red-600' : student.dailyStatuses[cell.day] === 'H' ? 'border-green-100 bg-green-50 text-green-800' : student.dailyStatuses[cell.day] === 'I' ? 'border-blue-100 bg-blue-50 text-blue-800' : student.dailyStatuses[cell.day] === 'S' ? 'border-amber-100 bg-amber-50 text-amber-800' : student.dailyStatuses[cell.day] === 'A' ? 'border-red-100 bg-red-50 text-red-800' : 'border-[#edf1ee] bg-[#f8faf8] text-[#849189]'" :aria-label="cell.day ? `${cell.day}${cell.sunday ? ', Minggu' : ''}: ${student.dailyStatuses[cell.day] || 'belum ada data'}` : null">
+                    <template x-if="cell.day">
+                      <span class="flex h-full flex-col items-center justify-center gap-0.5">
+                        <span class="text-[9px] font-semibold leading-none" x-text="cell.day"></span>
+                        <span class="text-[11px] font-extrabold leading-none" x-text="student.dailyStatuses[cell.day] || '·'"></span>
+                      </span>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </article>
+          </template>
+        </div>
+        <div x-show="!summaryLoading && !summaryError && students.length && reportPeriod === 'monthly'" class="hidden overflow-x-auto overscroll-x-contain px-3 py-2 sm:block sm:px-5 sm:py-3" role="region" aria-label="Tabel rekap absensi bulanan" tabindex="0">
+          <table class="w-full table-fixed border-collapse text-center text-[10px]">
+            <thead class="bg-[#f8faf8] font-bold text-[#637269]">
+              <tr>
+                <th scope="col" rowspan="2" class="w-10 border-b border-r border-[#e8eeea] px-1 py-2.5">No.</th>
+                <th scope="col" rowspan="2" class="w-40 border-b border-r border-[#e8eeea] px-2 py-2.5 text-left">Nama</th>
+                <th scope="col" :colspan="monthlyDays.length" class="border-b border-r border-[#e8eeea] px-3 py-2.5">Tanggal</th>
+                <th scope="col" colspan="4" class="border-b border-[#e8eeea] px-3 py-2.5">Jumlah</th>
+              </tr>
+              <tr>
+                <template x-for="day in monthlyDays" :key="`report-day-${day}`">
+                  <th scope="col" class="whitespace-nowrap border-r border-[#e8eeea] px-0 py-2" :class="isSunday(day) ? 'bg-red-50 text-red-600' : ''" x-text="day"></th>
+                </template>
+                <th scope="col" class="w-7 border-r border-[#e8eeea] px-0 py-2">H</th>
+                <th scope="col" class="w-7 border-r border-[#e8eeea] px-0 py-2">I</th>
+                <th scope="col" class="w-7 border-r border-[#e8eeea] px-0 py-2">S</th>
+                <th scope="col" class="w-7 px-0 py-2">A</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#edf1ee]">
+              <template x-for="(student, index) in monthlyReport" :key="`monthly-${student.nisn}`">
+                <tr class="text-ink hover:bg-[#fbfcfb]">
+                  <td class="overflow-hidden border-r border-[#edf1ee] px-1 py-2 font-semibold tabular-nums" x-text="student.nomorAbsen === '-' ? index + 1 : student.nomorAbsen"></td>
+                  <td class="max-w-0 overflow-hidden text-ellipsis whitespace-nowrap border-r border-[#edf1ee] px-2 py-2 text-left font-semibold" :title="student.nama" x-text="student.nama"></td>
+                  <template x-for="day in monthlyDays" :key="`report-${student.nisn}-${day}`">
+                    <td class="whitespace-nowrap border-r border-[#edf1ee] px-0 py-2 font-semibold" :class="isSunday(day) ? 'bg-red-50 text-red-600' : ''" x-text="student.dailyStatuses[day] || ''"></td>
+                  </template>
+                  <td class="border-r border-[#edf1ee] px-0 py-2 font-semibold" x-text="student.totals.H"></td>
+                  <td class="border-r border-[#edf1ee] px-0 py-2 font-semibold" x-text="student.totals.I"></td>
+                  <td class="border-r border-[#edf1ee] px-0 py-2 font-semibold" x-text="student.totals.S"></td>
+                  <td class="px-0 py-2 font-semibold" x-text="student.totals.A"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+        <div x-show="!summaryLoading && !summaryError && students.length && reportPeriod === 'semester'" class="space-y-3 bg-[#f8faf8] p-3 sm:hidden">
+          <template x-for="(student, index) in semesterReport" :key="`semester-mobile-${student.nisn}`">
+            <article class="rounded-xl border border-[#e8eeea] bg-white p-3 shadow-[0_1px_3px_rgba(29,55,40,0.04)]">
+              <div class="mb-3 flex min-w-0 items-center gap-2.5">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-mint text-sm font-extrabold tabular-nums text-forest" x-text="student.nomorAbsen === '-' ? index + 1 : student.nomorAbsen"></span>
+                <div class="min-w-0">
+                  <h3 class="break-words text-sm font-bold leading-snug text-ink" x-text="student.nama"></h3>
+                  <p class="mt-0.5 text-[10px] font-medium text-[#849189]" x-text="`NISN ${student.nisn}`"></p>
+                </div>
+              </div>
+              <div class="grid grid-cols-4 gap-1.5 text-center" :aria-label="`Jumlah kehadiran semester ${student.nama}`">
+                <div class="rounded-lg border border-green-100 bg-green-50 px-1 py-2 text-green-800">
+                  <p class="text-[9px] font-semibold uppercase tracking-wide text-green-700">Hadir</p>
+                  <p class="mt-0.5 text-sm font-extrabold tabular-nums" x-text="student.totals.H"></p>
+                </div>
+                <div class="rounded-lg border border-blue-100 bg-blue-50 px-1 py-2 text-blue-800">
+                  <p class="text-[9px] font-semibold uppercase tracking-wide text-blue-700">Izin</p>
+                  <p class="mt-0.5 text-sm font-extrabold tabular-nums" x-text="student.totals.I"></p>
+                </div>
+                <div class="rounded-lg border border-amber-100 bg-amber-50 px-1 py-2 text-amber-800">
+                  <p class="text-[9px] font-semibold uppercase tracking-wide text-amber-700">Sakit</p>
+                  <p class="mt-0.5 text-sm font-extrabold tabular-nums" x-text="student.totals.S"></p>
+                </div>
+                <div class="rounded-lg border border-red-100 bg-red-50 px-1 py-2 text-red-800">
+                  <p class="text-[9px] font-semibold uppercase tracking-wide text-red-700">Alpa</p>
+                  <p class="mt-0.5 text-sm font-extrabold tabular-nums" x-text="student.totals.A"></p>
+                </div>
+              </div>
+              <p class="mt-2 text-right text-xs text-[#637269]">Total tercatat: <span class="font-bold tabular-nums" x-text="Object.values(student.totals).reduce((sum, total) => sum + total, 0)"></span> hari</p>
+            </article>
+          </template>
+        </div>
+        <div x-show="!summaryLoading && !summaryError && students.length && reportPeriod === 'semester'" class="hidden overflow-x-auto overscroll-x-contain px-3 py-2 sm:block sm:px-5 sm:py-3" role="region" aria-label="Tabel rekap absensi per semester" tabindex="0">
+          <table class="w-full border-collapse text-left text-sm">
+            <thead class="bg-[#f8faf8] text-[11px] font-bold uppercase tracking-wide text-[#637269]">
+              <tr>
+                <th scope="col" class="border-b border-r border-[#e8eeea] px-3 py-3">No.</th>
+                <th scope="col" class="border-b border-r border-[#e8eeea] px-3 py-3">Nama siswa</th>
+                <th scope="col" class="border-b border-r border-[#e8eeea] px-3 py-3 text-center">Hadir</th>
+                <th scope="col" class="border-b border-r border-[#e8eeea] px-3 py-3 text-center">Izin</th>
+                <th scope="col" class="border-b border-r border-[#e8eeea] px-3 py-3 text-center">Sakit</th>
+                <th scope="col" class="border-b border-r border-[#e8eeea] px-3 py-3 text-center">Alpa</th>
+                <th scope="col" class="border-b border-[#e8eeea] px-3 py-3 text-center">Total</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#edf1ee]">
+              <template x-for="(student, index) in semesterReport" :key="`semester-${student.nisn}`">
+                <tr class="text-ink hover:bg-[#fbfcfb]">
+                  <td class="border-r border-[#edf1ee] px-3 py-2.5 font-semibold tabular-nums text-[#75837b]" x-text="student.nomorAbsen === '-' ? index + 1 : student.nomorAbsen"></td>
+                  <td class="border-r border-[#edf1ee] px-3 py-2.5 font-semibold" x-text="student.nama"></td>
+                  <td class="border-r border-[#edf1ee] px-3 py-2.5 text-center font-semibold" x-text="student.totals.H"></td>
+                  <td class="border-r border-[#edf1ee] px-3 py-2.5 text-center font-semibold" x-text="student.totals.I"></td>
+                  <td class="border-r border-[#edf1ee] px-3 py-2.5 text-center font-semibold" x-text="student.totals.S"></td>
+                  <td class="border-r border-[#edf1ee] px-3 py-2.5 text-center font-semibold" x-text="student.totals.A"></td>
+                  <td class="px-3 py-2.5 text-center font-bold" x-text="Object.values(student.totals).reduce((sum, total) => sum + total, 0)"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
         </div>
       </section>
     </main>
