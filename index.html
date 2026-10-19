@@ -827,7 +827,7 @@
           <div class="flex items-center justify-between gap-3">
             <div>
               <h2 id="monthly-report-heading" class="text-sm font-bold text-ink">Rekap absensi</h2>
-              <p class="mt-1 text-xs text-[#7b8981]" x-text="reportPeriod === 'semester' ? 'Jumlah kehadiran siswa selama semester yang dipilih.' : 'Kode harian: H = Hadir, I = Izin, S = Sakit, A = Alpa.'"></p>
+              <p class="mt-1 text-xs text-[#7b8981]" x-text="reportPeriod === 'semester' ? 'Ringkasan absensi siswa pada semester ini.' : 'Ringkasan absensi siswa pada bulan ini.'"></p>
             </div>
             <button type="button" @click="showReport = !showReport" :aria-expanded="showReport" class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#dce5df] bg-white px-3 text-xs font-bold text-forest transition hover:bg-[#f4f8f5] focus:outline-none focus:ring-2 focus:ring-forest focus:ring-offset-2">
               <span x-text="showReport ? 'Sembunyikan' : 'Tampilkan'"></span>
@@ -988,8 +988,7 @@
                 <th scope="col" class="border-b border-r border-[#e8eeea] px-3 py-3 text-center">Hadir</th>
                 <th scope="col" class="border-b border-r border-[#e8eeea] px-3 py-3 text-center">Izin</th>
                 <th scope="col" class="border-b border-r border-[#e8eeea] px-3 py-3 text-center">Sakit</th>
-                <th scope="col" class="border-b border-r border-[#e8eeea] px-3 py-3 text-center">Alpa</th>
-                <th scope="col" class="border-b border-[#e8eeea] px-3 py-3 text-center">Total</th>
+                <th scope="col" class="border-b border-[#e8eeea] px-3 py-3 text-center">Alpa</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[#edf1ee]">
@@ -1000,12 +999,14 @@
                   <td class="border-r border-[#edf1ee] px-3 py-2.5 text-center font-semibold" x-text="student.totals.H"></td>
                   <td class="border-r border-[#edf1ee] px-3 py-2.5 text-center font-semibold" x-text="student.totals.I"></td>
                   <td class="border-r border-[#edf1ee] px-3 py-2.5 text-center font-semibold" x-text="student.totals.S"></td>
-                  <td class="border-r border-[#edf1ee] px-3 py-2.5 text-center font-semibold" x-text="student.totals.A"></td>
-                  <td class="px-3 py-2.5 text-center font-bold" x-text="Object.values(student.totals).reduce((sum, total) => sum + total, 0)"></td>
+                  <td class="px-3 py-2.5 text-center font-semibold" x-text="student.totals.A"></td>
                 </tr>
               </template>
             </tbody>
           </table>
+        </div>
+        <div x-show="showReport && !summaryLoading && !summaryError && students.length && reportPeriod === 'monthly'" class="border-t border-[#e8eeea] bg-[#f8faf8] px-3 py-3 text-center text-[10px] font-medium text-[#6d7d75]">
+          <span>Keterangan: H = Hadir, I = Izin, S = Sakit, A = Alpa.</span>
         </div>
       </section>
     </main>
