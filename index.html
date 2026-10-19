@@ -702,19 +702,6 @@
                     <p class="break-words text-[12px] font-semibold leading-snug text-ink" x-text="student.nama"></p>
                     <span x-show="previousStatuses[student.nisn]" class="rounded border px-1.5 py-0.5 text-[10px] font-bold" :class="statusClass(previousStatuses[student.nisn])" x-text="`${previousDayName()}: ${previousStatuses[student.nisn]}`"></span>
                   </div>
-                  <div class="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[9px] leading-[1.2] font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
-                    <span x-show="summaryLoading">Memuat...</span>
-                    <template x-if="!summaryLoading && summaryFor(student.nisn).total">
-                      <span class="contents">
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#54a873]"></span><span x-text="summaryFor(student.nisn).Hadir"></span> hadir</span>
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#5b91c5]"></span><span x-text="summaryFor(student.nisn).Izin"></span> izin</span>
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#dba93b]"></span><span x-text="summaryFor(student.nisn).Sakit"></span> sakit</span>
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#d46762]"></span><span x-text="summaryFor(student.nisn).Alpa"></span> alpa</span>
-                      </span>
-                    </template>
-                    <span x-show="summaryError">Tidak tersedia</span>
-                    <span x-show="!summaryLoading && !summaryError && !summaryFor(student.nisn).total">Belum ada riwayat</span>
-                  </div>
                 </div>
                 <label class="block w-[118px] shrink-0">
                   <span class="sr-only" x-text="`Kehadiran ${student.nama}`"></span>
@@ -726,6 +713,19 @@
                     <option value="Alpa">Alpa</option>
                   </select>
                 </label>
+              </div>
+              <div class="mt-2 flex flex-nowrap items-center justify-between gap-x-1 text-[9px] leading-tight font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
+                <span x-show="summaryLoading" class="whitespace-nowrap">Memuat...</span>
+                <template x-if="!summaryLoading && summaryFor(student.nisn).total">
+                  <span class="contents">
+                    <span class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap"><span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#54a873]"></span><span x-text="summaryFor(student.nisn).Hadir"></span> hadir</span>
+                    <span class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap"><span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#5b91c5]"></span><span x-text="summaryFor(student.nisn).Izin"></span> izin</span>
+                    <span class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap"><span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#dba93b]"></span><span x-text="summaryFor(student.nisn).Sakit"></span> sakit</span>
+                    <span class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap"><span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#d46762]"></span><span x-text="summaryFor(student.nisn).Alpa"></span> alpa</span>
+                  </span>
+                </template>
+                <span x-show="summaryError" class="whitespace-nowrap">Tidak tersedia</span>
+                <span x-show="!summaryLoading && !summaryError && !summaryFor(student.nisn).total" class="whitespace-nowrap">Belum ada riwayat</span>
               </div>
             </article>
           </template>
