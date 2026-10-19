@@ -31,6 +31,7 @@
     body { background: #f7f8f7; color: #26342d; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     [x-cloak] { display: none !important; }
     .control { min-height: 46px; }
+    input[type="date"] { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
     .status-select { transition: none; }
     .status-empty { background: #f3f5f4; color: #66756e; }
     .status-hadir { background: #e3f4e9; color: #176b3b; border-color: #b9dfc5; }
@@ -610,9 +611,9 @@
               <template x-for="year in years" :key="year"><option :value="year" x-text="year.replace('_', '/')"></option></template>
             </select>
           </label>
-          <label class="block">
+          <label class="block min-w-0">
             <span class="mb-1.5 block text-xs font-semibold text-[#637269]">2. Tanggal</span>
-            <input type="date" x-model="selectedDate" @change="changeAttendanceContext()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
+            <input type="date" x-model="selectedDate" @change="changeAttendanceContext()" class="control block w-full min-w-0 max-w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
           </label>
           <label class="block">
             <span class="mb-1.5 block text-xs font-semibold text-[#637269]">3. Kelas</span>
