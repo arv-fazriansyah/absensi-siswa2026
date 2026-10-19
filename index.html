@@ -621,25 +621,25 @@
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label class="block min-w-0">
-            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">1. Tahun ajaran</span>
+            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">Tahun ajaran</span>
             <select x-model="selectedYear" @change="changeYear()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10" :disabled="!years.length">
               <option value="" disabled>Pilih tahun ajaran</option>
               <template x-for="year in years" :key="year"><option :value="year" x-text="year.replace('_', '/')"></option></template>
             </select>
           </label>
-          <label class="block min-w-0 sm:col-span-2 lg:col-span-1">
-            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">2. Tanggal</span>
+          <label class="block min-w-0">
+            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">Tanggal</span>
             <input type="date" x-model="selectedDate" @change="changeAttendanceContext()" aria-label="Pilih tanggal absensi" class="control block w-full min-w-0 max-w-full box-border rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10">
           </label>
           <label class="block min-w-0">
-            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">3. Kelas</span>
+            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">Kelas</span>
             <select x-model="selectedClass" @change="loadStudents()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10" :disabled="!classes.length">
               <option value="" disabled>Pilih kelas</option>
               <template x-for="className in classes" :key="className"><option :value="className" x-text="className"></option></template>
             </select>
           </label>
           <label class="block min-w-0">
-            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">4. Role</span>
+            <span class="mb-1.5 block text-xs font-semibold text-[#637269]">Role</span>
             <select x-model="selectedRole" @change="changeAttendanceRole()" class="control w-full rounded-lg border border-[#dce5df] bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-[#176b52]/10" :disabled="!roles.length">
               <option value="" disabled>Pilih role</option>
               <template x-for="role in roles" :key="role"><option :value="role" x-text="role"></option></template>
