@@ -526,13 +526,31 @@
             student.totals.A,
             ...(isSemester ? [Object.values(student.totals).reduce((sum, total) => sum + total, 0)] : [])
           ]);
+          const metadata = [
+            ['Sekolah', '', this.schoolName || '-'],
+            ['Kelas', '', this.selectedClass],
+            ['Role', '', this.selectedRole],
+            ['Tahun Ajaran', '', this.selectedYear.replace('_', '/')]
+          ];
           const worksheet = window.XLSX.utils.aoa_to_sheet([
             [`Rekap Absensi ${isSemester ? 'Semester' : 'Bulanan'} - ${period?.label || ''}`],
-            [`Tahun Ajaran: ${this.selectedYear.replace('_', '/')} | Kelas: ${this.selectedClass} | Role: ${this.selectedRole}`],
+            [''],
+            ...metadata,
+            [''],
             headers,
             ...rows
           ]);
-          worksheet['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }];
+          worksheet['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
+            ...metadata.flatMap((_, index) => {
+              const row = index + 2;
+              return [
+                { s: { r: row, c: 0 }, e: { r: row, c: 1 } },
+                { s: { r: row, c: 2 }, e: { r: row, c: headers.length - 1 } }
+              ];
+            })
+          ];
           worksheet['!cols'] = [
             { wch: 8 },
             { wch: 28 },
@@ -714,7 +732,7 @@
                   </select>
                 </label>
               </div>
-              <div class="mt-2 flex flex-nowrap items-center justify-between gap-x-1 text-[10px] leading-tight font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
+              <div class="mt-2 flex flex-nowrap items-center justify-between gap-x-1 text-[9px] leading-tight font-semibold text-[#637269]" aria-label="Ringkasan absensi tahun ajaran">
                 <span x-show="summaryLoading" class="whitespace-nowrap">Memuat...</span>
                 <template x-if="!summaryLoading && summaryFor(student.nisn).total">
                   <span class="contents">
